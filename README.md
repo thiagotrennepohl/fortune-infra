@@ -52,7 +52,7 @@ This repo contains ansible roles, playbooks, Kubernetes scripts and roles.
 
 # Kubernetes
 
-## Creating a kube confi file for users
+## Creating a kube config file for users
 
 Setting the environments below is required
 

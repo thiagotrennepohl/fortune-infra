@@ -1,0 +1,79 @@
+---
+
+- name: Creates directory
+  file: path=/data/prometheus/data state=directory
+  tags:
+    - setup-prometheus
+    - prometheus-volumes
+
+- name: Create Prometheus Docker Network
+  shell: docker network create prometheus || true
+  tags:
+    - setup-prometheus
+
+- name: Connect Proxy to prometheus network
+  shell: docker network connect prometheus proxy || true
+  tags:
+    - setup-prometheus
+  
+- name: Change Prometheus data directory group
+  file:
+    path: /data/prometheus/data
+    group: 1010
+    recurse: yes
+  tags:
+    - setup-prometheus
+
+- name: Change Porometheus data directory ownership
+  shell: chown -R 1010:1010 /data/prometheus/data
+  tags:
+    - setup-prometheus
+
+- name: Add password for prometheus
+  copy:
+    src: "{{ role_path }}/files/{{ prometheus_host }}"
+    dest: /data/nginx/htpasswd/
+  tags:
+    - setup-prometheus
+
+- name: Ansible Template
+  template:
+    src: prometheus.conf.j2
+    dest: /data/prometheus/prometheus.yml
+  tags:
+    - setup-prometheus
+    - start-prometheus
+
+- name: Initiate Prometheus container
+  docker_container:
+    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention=4320h  --web.enable-lifecycle  --web.enable-admin-api"
+    detach: yes
+    ulimits:
+      - nofile:64000:64000
+      - nproc:64000:64000
+      - fsize:-1:-1
+      - cpu:-1:-1
+      - memlock:-1:-1
+    image: prom/prometheus:v2.5.0
+    name: production_prometheus_server
+    recreate: yes
+    pull: yes
+    user: 1010:1010
+    restart_policy: unless-stopped
+    hostname: prometheus
+    networks:
+      - name: "prometheus"
+        aliases:
+          - prometheus-service
+    env:
+      VIRTUAL_PORT: 9090
+      HTTTPS_METHOD: redirect
+      VIRTUAL_HOST: "{{ prometheus_host }}"
+      LETSENCRYPT_HOST: "{{ prometheus_host }}"
+      LETSENCRYPT_EMAIL: "{{ letsencrypt_email }}"
+    volumes:
+      - /data/prometheus/data:/prometheus/data:rw
+      - /data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  tags:
+    - start_monitoring
+    - start-prometheus

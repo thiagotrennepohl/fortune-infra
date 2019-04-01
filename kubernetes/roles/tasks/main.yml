@@ -1,0 +1,14 @@
+- filesystem:
+    fstype: ext4
+    dev: /dev/xvdf
+
+- name: Creates directory
+  file: path=/data/docker state=directory
+
+- name: Mount up device by label
+  mount:
+    name: /data/docker
+    src: /dev/xvdf
+    fstype: ext4
+    opts: rw
+    state: mounted

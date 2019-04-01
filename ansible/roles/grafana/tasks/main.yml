@@ -1,0 +1,43 @@
+---
+- name: Creates directory
+  file: path=/data/grafana/data state=directory
+  tags:
+    - grafana-volumes
+
+- name: Change Grafana data directory group
+  file:
+    path: /data/grafana/data
+    group: docker
+    recurse: yes
+  tags:
+    - grafana-volumes
+
+
+- name: Start grafana container
+  docker_container:
+    detach: yes
+    ulimits:
+      - nofile:64000:64000
+      - nproc:64000:64000
+      - fsize:-1:-1
+      - cpu:-1:-1
+      - memlock:-1:-1
+    image: grafana/grafana:5.0.0
+    name: production_grafana
+    restart: yes
+    restart_policy: unless-stopped
+    networks:
+      - name: "prometheus"
+        aliases:
+          - grafana-service
+    env:
+      VIRTUAL_PORT: 3000
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana.password }}"
+      HTTTPS_METHOD: redirect
+      VIRTUAL_HOST: "{{ grafana_host }}"
+      LETSENCRYPT_HOST: "{{ grafana_host }}"
+      LETSENCRYPT_EMAIL: "{{letsencrypt_email}}"
+    volumes:
+      - /data/grafana/data:/var/lib/grafana
+  tags:
+    - start-grafana

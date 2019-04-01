@@ -1,0 +1,6 @@
+---
+- name: Run Mongo Exporters
+  include: mongo.yml
+  
+- name: Run Node Exporter
+  include: node.yml

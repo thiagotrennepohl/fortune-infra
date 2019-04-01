@@ -1,0 +1,18 @@
+---
+- name: Start Mongo exporter
+  docker_container:
+    detach: yes
+    ulimits:
+      - nofile:64000:64000
+      - nproc:64000:64000
+      - fsize:-1:-1
+      - cpu:-1:-1
+      - memlock:-1:-1
+    image: thiagotr/mongodb-exporter
+    name: production_mongodb_exporter
+    restart: yes
+    restart_policy: unless-stopped
+    env:
+      MONGODB_URL: "{{mongo.username}}:{{mongo.password}}@m{{ mongo_addr }}:27017"
+  tags:
+    - start-mongodb-exporter

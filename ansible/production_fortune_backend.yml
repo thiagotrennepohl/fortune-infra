@@ -1,0 +1,84 @@
+---
+- name: Create an EC2 instance
+  hosts: localhost
+  gather_facts: False
+
+  vars:
+    keypair: production-fortune-keypair
+    instance_name: "production_fortune_app"
+    type: t2.micro
+    group_id: sg-08fa8671b00fa01e8
+    region: us-east-1
+    vpc_subnet_id: subnet-21670746
+    image: ami-e13739f6
+    ansible_ssh_private_file: ~/.ssh/production-fortune-keypair
+    ipaddr: 172.31.1.30
+
+
+  tasks:
+    - name: Launch instance
+      ec2:
+        key_name: "{{ keypair }}"
+        group_id: "{{ group_id}}"
+        instance_type: "{{ type }}"
+        image: "{{ image }}"
+        region: "{{ region }}"
+        private_ip: "{{ ipaddr }}"
+        vpc_subnet_id: "{{ vpc_subnet_id }}"
+        user_data: |
+                   #!/bin/sh
+                   sudo apt-get update && sudo apt-get install -y python python-pip
+        assign_public_ip: yes
+        wait: true
+        instance_tags:
+          Name: "{{ instance_name }}"
+          environment: "production"
+      register: ec2
+      tags:
+        - setup-ec2
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        ansible_ssh_host: "{{ item.public_ip }}"
+        groups: app-servers
+        ansible_ssh_user: ubuntu
+        ansible_ssh_private_key_file: "{{ ansible_ssh_private_file }}"
+      with_items: '{{ec2.instances}}'
+      tags:
+        - setup-ec2
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_ip }}"
+        port: 22
+        delay: 120
+        timeout: 320
+        state: started
+      with_items: '{{ec2.instances}}'
+      tags:
+        - setup-ec2
+
+    - name: Create EBS Docker volume
+      ec2_vol:
+        instance: "{{ item.id }}"
+        name: "{{ instance_name }}-docker-volume"
+        volume_size: 20
+        region: us-east-1
+        device_name: /dev/xvdf
+      with_items: "{{ ec2.instances }}"
+      tags:
+        - setup-ec2
+
+- name: set-up instance
+  hosts: 
+    - app-servers
+    - tag_Name_production_fortune_app
+  become: yes
+  roles:
+    - docker
+    - users
+    - proxy
+    - letsencrypt
+    - fortune-app-deploy
+    # - fortune-scrapper-deploy

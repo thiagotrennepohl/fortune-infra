@@ -1,0 +1,5 @@
+bearer_token: k8s-bearer-toke
+k8s_cluster_addr: "k8s-server-api-addr"
+user_name: "deployer"
+aws_access_id: aws-id
+aws_secret_key: aws-key 

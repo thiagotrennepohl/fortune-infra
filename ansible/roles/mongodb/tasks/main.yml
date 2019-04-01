@@ -1,0 +1,47 @@
+---
+
+
+- filesystem:
+    fstype: ext4
+    dev: /dev/xvdh
+  tags:
+    - mongo_volumes
+
+- name: Change group of MongoDB directory
+  file:
+    path: /data/mongo/
+    group: docker
+    recurse: yes
+  tags:
+    - docker_run
+
+- name: Change ownership of MongoDB directory
+  shell: |
+    docker run -it --rm --name mongo_chown -v /data/mongo:/data/mongo mongo:3.6 sh -c 'chown -R mongodb /data/mongo/'
+  tags:
+    - docker_run
+
+- name: Start MongoDB docker container
+  docker_container:
+    detach: yes
+    ulimits:
+      - nofile:64000:64000
+      - nproc:64000:64000
+      - fsize:-1:-1
+      - cpu:-1:-1
+      - memlock:-1:-1
+    image: mongo:3.6
+    name: production_mongodb
+    user: mongodb
+    ports:
+      - "27017:27017"
+      - "27019:27019"
+    restart: yes
+    privileged : 'yes'
+    restart_policy: unless-stopped
+    volumes:
+      - /data/mongo:/data/mongo:rw
+    network_mode: host
+  tags:
+    - docker_run
+    - start_mongo

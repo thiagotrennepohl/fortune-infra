@@ -1,0 +1,28 @@
+- name: Initiate Jenkins container
+  docker_container:
+    detach: yes
+    ulimits:
+      - nofile:64000:64000
+      - nproc:64000:64000
+      - fsize:-1:-1
+      - cpu:-1:-1
+      - memlock:-1:-1
+    image: thiagotr/jenkins:dind
+    name: production_jenkins
+    restart: yes
+    recreate: yes
+    pull: yes
+    restart_policy: unless-stopped
+    hostname: fortune-app
+    env:
+      VIRTUAL_PORT: 8080
+      HTTTPS_METHOD: redirect
+      VIRTUAL_HOST: "{{ jenkins_host }}"
+      LETSENCRYPT_HOST: "{{ jenkins_host }}"
+      LETSENCRYPT_EMAIL: "{{ letsencrypt_email }}"
+      
+    volumes:
+      - /data/jenkins/:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+  tags:
+    - start_jenkins

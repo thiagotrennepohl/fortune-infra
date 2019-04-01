@@ -1,0 +1,96 @@
+global:
+  evaluation_interval: 10s
+  scrape_interval: 15s
+
+
+scrape_configs:
+- job_name: 'Kube-Node'
+  scheme: https
+  bearer_token: {{ bearer_token }}
+  tls_config:
+    insecure_skip_verify: true
+  kubernetes_sd_configs:
+  - role: node
+    api_server: {{ k8s_cluster_addr }}
+    bearer_token: {{ bearer_token }}
+    tls_config:
+      insecure_skip_verify: true
+  relabel_configs:
+  - target_label: __address__
+    replacement: {{ k8s_cluster_addr }}
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics
+    
+      
+- job_name: 'kubernetes-cadvisor'
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
+  bearer_token: {{ bearer_token }}
+  kubernetes_sd_configs:
+  - role: node
+    api_server: {{ k8s_cluster_addr }}
+    bearer_token: {{ bearer_token }}
+    tls_config:
+      insecure_skip_verify: true
+  relabel_configs:
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: {{ k8s_cluster_addr }}
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+
+- job_name: 'Node exporters'
+  scrape_interval: 30s
+  scrape_timeout: 25s
+  ec2_sd_configs:
+    - region: 'us-east-1'
+      access_key:  {{ aws_access_id }}
+      secret_key: {{ aws_secret_key }}
+      port: 9100
+  relabel_configs:
+    - source_labels:
+      - '__meta_ec2_tag_PrometheusMonitoring'
+      regex: 'false'
+      action: 'drop'
+    - source_labels: 
+      - '__meta_ec2_tag_Name'
+      regex: '(.*)'
+      target_label: instance
+      replacement: ${1}
+    - source_labels: 
+      - '__meta_ec2_private_ip'
+      regex: '(.*)'
+      target_label: instance_ip_address
+      replacement: ${1}
+
+  
+- job_name: 'Mongodb Exporters'
+  scrape_interval: 30s
+  scrape_timeout: 25s
+  ec2_sd_configs:
+    - region: 'us-east-1'
+      access_key:  {{ aws_access_id }}
+      secret_key: {{ aws_secret_key }}
+      port: 9216
+  relabel_configs:
+    - source_labels:
+      - '__meta_ec2_tag_PrometheusMonitoring'
+      regex: 'false'
+      action: 'drop'
+    - source_labels: 
+      - '__meta_ec2_tag_Name'
+      regex: '(.*)'
+      target_label: instance
+      replacement: ${1}
+    - source_labels: 
+      - '__meta_ec2_private_ip'
+      regex: '(.*)'
+      target_label: instance_ip_address
+      replacement: ${1}

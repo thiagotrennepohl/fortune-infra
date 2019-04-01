@@ -1,0 +1,3 @@
+- name: Run node exporter
+  raw: docker rm -f production_node_exporter || true && docker run -d --name production_node_exporter --net="host" --pid="host" -v "/:/host:ro,rslave"  quay.io/prometheus/node-exporter  --path.rootfs /host
+  tags: node-exporter

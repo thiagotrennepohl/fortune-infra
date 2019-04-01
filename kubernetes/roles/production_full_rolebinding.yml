@@ -1,0 +1,13 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: prod-full-access
+  namespace: default
+subjects:
+- kind: User
+  name: user-name
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: prod-full-access
+  apiGroup: ""

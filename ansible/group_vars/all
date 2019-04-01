@@ -1,0 +1,13 @@
+users:
+  - username: thiago
+    name: Thiago Trennepohl
+    groups: ['sudo','docker','adm']
+    uid: 0703
+    ssh_key:
+      - "<your - public - key here >"
+    
+
+users_deleted:
+  - username: 
+    name: 
+    uid: 

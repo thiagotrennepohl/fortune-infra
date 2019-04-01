@@ -1,0 +1,18 @@
+  - name: Copy Proxy unit
+    copy:
+      src: "{{ role_path }}/files/proxy.service"
+      dest: /etc/systemd/system/
+    tags:
+      - setup-proxy
+
+  - name: Enable proxy service
+    service: name=proxy.service enabled=true state=started
+    tags:
+      - setup-proxy
+      - enable-proxy
+
+  - name: Restart proxy service
+    service: name=proxy.service enabled=true state=restarted
+    tags:
+      - setup-proxy
+      - restart-proxy

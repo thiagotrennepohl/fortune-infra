@@ -1,0 +1,13 @@
+  kind: RoleBinding
+  apiVersion: rbac.authorization.k8s.io/v1beta1
+  metadata:
+    name: dev-readonly
+    namespace: kube-ingress
+  subjects:
+  - kind: Group
+    name: dev
+    apiGroup: ""
+  roleRef:
+    kind: Role
+    name: dev-readonly
+    apiGroup: ""
